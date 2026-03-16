@@ -248,15 +248,12 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                     best = max(best, val)
                 return best
             else:
-                child_values = []
-                for action in legal_actions:
-                    successor = state.generate_successor(agent_index, action)
-                    child_values.append(expectimax(successor, next_agent, next_depth))
-
-                min_val = min(child_values)
-                avg_val = sum(child_values) / len(child_values)
-                p = self.prob
-                return (1 - p) * min_val + p * avg_val
+                child_values = [expectimax(state.generate_successor(agent_index, a), next_agent, next_depth) 
+                    for a in legal_actions]
+                
+                prob_random = self.prob
+                expected_value = (1 - prob_random) * min(child_values) + prob_random * (sum(child_values) / len(child_values))
+                return expected_value
 
         legal_actions = state.get_legal_actions(0)
         if not legal_actions:

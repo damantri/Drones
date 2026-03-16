@@ -73,7 +73,7 @@ def evaluation_function(state: GameState) -> float:
 
     
     
-    DANGER_RADIUS = 8
+    DANGER_RADIUS = 6
     for hunter_pos in hunter_positions:
         hunter_dist = bfs_distance(layout, hunter_pos, drone_pos, hunter_restricted=True)
         if hunter_dist == float("inf"):
@@ -82,7 +82,7 @@ def evaluation_function(state: GameState) -> float:
         elif hunter_dist == 0:
             score -= 1000.0  
         elif hunter_dist <= DANGER_RADIUS:
-            score -= 200.0 / (hunter_dist + 0.1)
+            score -= 250.0 / (hunter_dist + 0.1)
 
     score -= 100.0 * len(pending_deliveries)
 
