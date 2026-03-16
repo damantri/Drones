@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from algorithms.utils import bfs_distance, dijkstra
 
 if TYPE_CHECKING:
     from world.game_state import GameState
@@ -41,5 +42,60 @@ def evaluation_function(state: GameState) -> float:
     - Consider edge cases: no pending deliveries, no hunters nearby.
     - A good evaluation function balances delivery progress with hunter avoidance.
     """
-    # TODO: Implement your code here
-    return 0.0
+    if state.is_win():
+        return 1000.0
+    if state.is_lose():
+        return -1000.0
+
+    layout = state.get_layout()
+    drone_pos = state.get_drone_position()
+    hunter_positions = state.get_hunter_positions()
+    pending_deliveries = state.get_pending_deliveries()
+
+    score = 0.0
+
+    
+    if pending_deliveries:
+        nearest_delivery_dist = float("inf")
+        for delivery in pending_deliveries:
+            cost, _ = dijkstra(layout, drone_pos, delivery)
+            if cost < nearest_delivery_dist:
+                nearest_delivery_dist = cost
+
+        if nearest_delivery_dist == float("inf"):
+            score -= 500.0  
+        else:
+            
+            score -= 10.0 * nearest_delivery_dist
+    else:
+        
+        score += 500.0
+
+    
+    
+    DANGER_RADIUS = 8
+    for hunter_pos in hunter_positions:
+        hunter_dist = bfs_distance(layout, hunter_pos, drone_pos, hunter_restricted=True)
+        if hunter_dist == float("inf"):
+            
+            score += 50.0
+        elif hunter_dist == 0:
+            score -= 1000.0  
+        elif hunter_dist <= DANGER_RADIUS:
+            score -= 200.0 / (hunter_dist + 0.1)
+
+    score -= 100.0 * len(pending_deliveries)
+
+    for delivery in pending_deliveries:
+        drone_to_delivery = bfs_distance(layout, drone_pos, delivery)
+        hunter_min_to_delivery = float("inf")
+        for hunter_pos in hunter_positions:
+            h_dist = bfs_distance(layout, hunter_pos, delivery, hunter_restricted=True)
+            if h_dist < hunter_min_to_delivery:
+                hunter_min_to_delivery = h_dist
+
+        if drone_to_delivery < hunter_min_to_delivery:
+            score += 30.0
+
+    return max(-999.0, min(999.0, score))
+
